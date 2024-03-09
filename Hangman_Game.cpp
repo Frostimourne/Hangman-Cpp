@@ -13,7 +13,7 @@ using namespace std;
 class HangmanGame
 {
 
-public:
+    private:
 
     vector<string> wordList;
     bool guessedLetters[25];
@@ -25,19 +25,45 @@ public:
     int numberOfWrongGuesses;
     int ASCII_OFFSET;
 
+    //Stats - not necessary for game itself, but will be output to a file for the user to assess their play
+    int guessFrequency[25];
+    int wins;
+    int losses;
+    
+    //Outputs statistics to text file
+    //Overwrites previous session stats
+    void outputSessionStats()
+    {
+        fstream Output;
+        Output.open("SessionStats.txt", fstream::out, fstream::trunc);
+
+        if(Output.is_open())
+        {
+            int commonGuessCount = 0;
+            char commonGuessChar = '?';
+            for (int i = 0;i < 26; i++)
+            {
+                if(guessFrequency[i] > commonGuessCount) 
+                {
+                    commonGuessCount = guessFrequency[i];
+                    commonGuessChar = char(i + ASCII_OFFSET);
+                }
+            }
+
+            Output << "Session statistics:\n\n"
+            << "Wins: " << wins << endl
+            << "Losses: " << losses << endl
+            << "Win percentage: " << int((float(wins) / float(wins + losses))*100) << "%" << endl
+            << "Most common guess: " << commonGuessChar << " (" << commonGuessCount << ")" << endl;
+
+        } else {
+            cout << "error opening output file.\n\n";
+        }
+    }
+
     void initializeGallows()
     {
-        /*
-        //Initialize Gallows - There's definitely a better way to do this
-        char longFormGallows[] = "  -+-----+    x~~~~~~~x |          |       |  |          |       |  |          |       |  |          |       |  |          x~~~~~~~x==^=======            ";
-        for(int i=0; i < 7; i++)
-        {
-            for(int j=0; j < 22; j++)
-            {
-                gallowsMap[i][j] = longFormGallows[(i*22) + j];
-            }
-        }
-        */
+        //A bit clunky, but it gets the job done.  Initializes the GallowsMap array as "empty" of guesses
         strcpy(gallowsMap[0], "                      ");
         strcpy(gallowsMap[1], "  +------+   x~~~~~~~x");
         strcpy(gallowsMap[2], "  |          |       |");
@@ -128,6 +154,9 @@ public:
 
     void checkGuess()
     {
+        //Update guess stats
+        guessFrequency[int(validGuess) - ASCII_OFFSET]++;
+
         cout << "\n\n";
 
         if (guessedLetters[int(validGuess) - ASCII_OFFSET]) //Letter already guessed
@@ -203,7 +232,12 @@ public:
         win = victory;
         gameOver = win;
 
-        if(win) {cout << "You guessed the secret word!  Great job!\n\n";}
+        //Add win to win counter and inform player of victory
+        if(win) 
+        {
+            cout << "You guessed the secret word!  Great job!\n\n";
+            wins++;
+        }
     }
 
 
@@ -216,10 +250,13 @@ public:
             printSecretWord();
             checkForVictory();
 
+            //If too many wrong guesses, game is over, and losses +1
             if(numberOfWrongGuesses > 6)
             {
                 cout << "Oh no!  The man is hung!  You lose! The secret word was: " << secretWord << "\n\n";
                 gameOver = true;
+                losses++;
+
             } else if (!win)
             {
                 getValidGuess();
@@ -236,6 +273,8 @@ public:
         secretWord = wordList[rand() % wordList.size()];
     }
 
+
+    public:
 
     //Word List Constructor
     HangmanGame()
@@ -263,6 +302,14 @@ public:
         
         //Game Over starts false
         gameOver = false;
+
+        //Initialize stats
+        wins = 0;
+        losses = 0;
+        for(int i=0; i<26; i++)
+        {
+            guessFrequency[i] = 0;
+        }
 
     }
 
@@ -292,6 +339,7 @@ public:
                 gameOver = false;
             }
         }
+        outputSessionStats();
     }
 
 
@@ -301,13 +349,9 @@ public:
 
 int main()
 {
-
-
     HangmanGame HG1;
-
     HG1.BeginGame();
 
     cout << "Thanks for playing!\n";
-
     return 0;
 }
