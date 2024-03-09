@@ -1,6 +1,0 @@
-Session statistics:
-
-Wins: 1
-Losses: 2
-Win percentage: 33%
-Most common guess: A (3)
